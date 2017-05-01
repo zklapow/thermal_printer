@@ -20,9 +20,6 @@ pub enum Command {
     LF = 10,
     DASH = 45,
     EXCL = 69,
-    DOTS0 = 0xB0,
-    DOTS1 = 0xB1,
-    DOTS2 = 0xB2,
     SPACE = 0x20
 }
 
@@ -45,7 +42,7 @@ impl Printer {
         let mut printer = Printer{port: Arc::new(Mutex::new(port))};
 
         trace!("Configuring printer");
-        printer.configure(7, 120, 4)?;
+
 
         trace!("Feeding line on start");
         printer.feed()?;
@@ -87,10 +84,9 @@ impl Printer {
         trace!("Triggering test page");
         self.justify(Justification::Center)?;
 
-        let out = [Command::DOTS2 as u8; 30];
+        let out = [Command::DC2 as u8, 'T' as u8];
         self.write(&out)?;
-        self.feed()?;
-        self.feed()
+        self.flush()
     }
 
     pub fn justify(&mut self, just: Justification) -> io::Result<()> {
