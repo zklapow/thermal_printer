@@ -1,7 +1,20 @@
 [package]
 name = "thermal_printer"
-version = "0.1.0"
+description = "High level API for interacting with CSN-A2 thermal printer"
+repository = "https://github.com/zklapow/thermal_printer"
+keywords = ["thermal-printer", "serial"]
+categories = ["hardware-support"]
+license = "Apache-2.0"
+version = "0.0.1"
 authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
+exclude = [
+  "ci/*",
+  "*.iml",
+  ".travis.yml"
+]
+
+[badges]
+travis-ci = { repository = "zklapow/thermal_printer" }
 
 [dependencies]
 serial = "0.3"
