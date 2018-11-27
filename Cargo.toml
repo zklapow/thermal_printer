@@ -2,10 +2,10 @@
 name = "thermal_printer"
 description = "High level API for interacting with CSN-A2 thermal printer"
 repository = "https://github.com/zklapow/thermal_printer"
-keywords = ["thermal-printer", "serial"]
-categories = ["hardware-support"]
+keywords = ["thermal-printer", "serial", "embedded-hal", "embedded-hal-driver"]
+categories = ["hardware-support", "no-std", "embedded"]
 license = "Apache-2.0"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
 exclude = [
   "ci/*",
@@ -17,5 +17,9 @@ exclude = [
 travis-ci = { repository = "zklapow/thermal_printer" }
 
 [dependencies]
-serial = "0.3"
-log = "^0.3"
+embedded-hal = "^0.2"
+nb = "0.1.1"
+
+[dev-dependencies]
+serial = "0.4.0"
+serial-embedded-hal = "0.1.2"

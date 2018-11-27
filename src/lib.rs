@@ -1,16 +1,15 @@
-#[macro_use]
-extern crate log;
-extern crate serial;
+#![no_std]
 
-use std::io;
-use std::io::{Write};
-use std::sync::{Mutex, Arc};
-use std::time::Duration;
+extern crate embedded_hal;
+extern crate nb;
 
-use serial::prelude::*;
+use embedded_hal::serial;
+use embedded_hal::blocking::serial::write::Default;
+use embedded_hal::prelude::*;
+use nb::{Result};
 
 pub mod prelude {
-    pub use ::{Printer, Print, Command, Justification};
+    pub use super::{ThermalPrinter, Command, Justification};
 }
 
 #[derive(Debug)]
@@ -31,112 +30,80 @@ pub enum Justification {
 }
 
 #[derive(Clone)]
-pub struct Printer {
-    port: Arc<Mutex<Box<SerialPort + Send>>>
+pub struct ThermalPrinter<T> where T: serial::Write<u8> {
+    port: T,
 }
 
-impl Printer {
-    pub fn new(dev_path: &str) -> io::Result<Printer> {
-        let port = Printer::open_serial_port(dev_path)?;
-
-        let mut printer = Printer{port: Arc::new(Mutex::new(port))};
-
-        trace!("Configuring printer");
-
-
-        trace!("Feeding line on start");
-        printer.feed()?;
-
-        return Ok(printer);
+impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
+    pub fn new(port: T) -> ThermalPrinter<T> {
+        return ThermalPrinter { port }
     }
 
-    fn open_serial_port(dev_path: &str) -> io::Result<Box<SerialPort + Send>> {
-        trace!("Opening serial port at {}", dev_path);
-
-        let mut port = serial::open(dev_path)?;
-        trace!("Configuring serial port");
-        port.reconfigure(&|settings| {
-            settings.set_baud_rate(serial::Baud19200)?;
-            settings.set_char_size(serial::Bits8);
-            settings.set_parity(serial::ParityNone);
-            settings.set_stop_bits(serial::Stop1);
-            settings.set_flow_control(serial::FlowNone);
-            Ok(())
-        })?;
-
-        port.set_timeout(Duration::from_millis(1000))?;
-
-        Ok(Box::new(port))
-    }
-
-    pub fn configure(&mut self, dots: u8, time: u8, interval: u8) -> io::Result<()> {
+    pub fn configure(&mut self, dots: u8, time: u8, interval: u8) -> Result<(), T::Error> {
         // LF 7
         let cmd = [Command::ESC as u8, 55u8, dots, time, interval];
-        self.write(&cmd)?;
+        self.write_all(&cmd)?;
         self.flush()
     }
 
-    pub fn print<T: Print>(&mut self, item: T) -> io::Result<()> {
-        item.print(self)
-    }
-
-    pub fn run_test(&mut self) -> io::Result<()> {
-        trace!("Triggering test page");
+    pub fn run_test(&mut self) -> Result<(), T::Error> {
         self.justify(Justification::Center)?;
 
         let out = [Command::DC2 as u8, 'T' as u8];
-        self.write(&out)?;
+        self.write_all(&out)?;
         self.flush()
     }
 
-    pub fn justify(&mut self, just: Justification) -> io::Result<()> {
-        trace!("Setting justification {:?}", just);
+    pub fn justify(&mut self, just: Justification) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, 97u8, just as u8];
 
-        self.write(&cmd)?;
+        self.write_all(&cmd)?;
         self.flush()
     }
 
-    pub fn feed(&mut self) -> io::Result<()> {
+    pub fn feed(&mut self) -> Result<(), T::Error> {
         self.feed_n(1)
     }
 
-    pub fn feed_n(&mut self, n: u8) -> io::Result<()> {
+    pub fn feed_n(&mut self, n: u8) -> Result<(), T::Error> {
         for _ in 0..n {
-            self.write(&[Command::LF as u8])?;
+            self.write_all(&[Command::LF as u8])?;
         }
         self.flush()
     }
 
-    pub fn set_underline(&mut self, n: u8) -> io::Result<()> {
+    pub fn set_underline(&mut self, n: u8) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, Command::DASH as u8, n];
-        self.write(&cmd)?;
+        self.write_all(&cmd)?;
         self.flush()
     }
 
-    pub fn set_bold(&mut self, flag: bool) -> io::Result<()> {
+    pub fn set_bold(&mut self, flag: bool) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, Command::EXCL as u8, flag as u8];
-        self.write(&cmd)?;
+        self.write_all(&cmd)?;
         self.flush()
     }
-}
 
-impl Write for Printer {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let port_lock = self.port.clone();
-        let mut port = port_lock.lock().unwrap();
-
-        port.write(buf)
+    /// Consume the printer, freeing the underlying serial port
+    pub fn free(self) -> T {
+        self.port
     }
 
-    fn flush(&mut self) -> io::Result<()> {
-        let port_lock = self.port.clone();
-        let mut port = port_lock.lock().unwrap();
-
-        port.flush()
+    fn write_all(&mut self, buffer: &[u8]) -> Result<(), T::Error> {
+        self.bwrite_all(buffer).map_err(|e| nb::Error::Other(e))
     }
 }
 
-pub trait Print {
-    fn print(&self, printer: &mut Printer) -> io::Result<()>;
+impl <T> serial::Write<u8> for ThermalPrinter<T> where T: serial::Write<u8> {
+    type Error = T::Error;
+
+    fn write(&mut self, word: u8) -> Result<(), Self::Error> {
+        self.port.write(word)
+    }
+
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        self.port.flush()
+    }
 }
+
+impl <T> Default<u8> for ThermalPrinter<T> where T: serial::Write<u8> {}
