@@ -10,6 +10,7 @@ pub mod prelude {
     pub use embedded_hal::serial::Write as _thermal_printer_serial_Write;
 }
 
+/// Special command characters used by the printer's serial protocol
 #[derive(Debug)]
 pub enum Command {
     ESC = 27,
@@ -20,6 +21,7 @@ pub enum Command {
     SPACE = 0x20
 }
 
+/// Character justification
 #[derive(Debug)]
 pub enum Justification {
     Left = 0,
@@ -27,6 +29,7 @@ pub enum Justification {
     Right = 2
 }
 
+/// ThermalPrinter wraps a serial port to provide a high-level abstraction over the printers serial protocol.
 #[derive(Clone)]
 pub struct ThermalPrinter<T> where T: serial::Write<u8> {
     port: T,
@@ -36,6 +39,8 @@ pub struct ThermalPrinter<T> where T: serial::Write<u8> {
 }
 
 impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
+    /// Creates a new thermal priner on the given port, with the default settings
+    /// Once you have successfully connected to the printer you can update these settings using `configure`
     pub fn new(port: T) -> ThermalPrinter<T> {
         // The default times here are copied from adafruit's thermal printer arduino library
         return ThermalPrinter {
@@ -52,6 +57,7 @@ impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
         self.flush()
     }
 
+    /// Run the printers internal self test
     pub fn run_test(&mut self) -> Result<(), T::Error> {
         self.justify(Justification::Center)?;
 
@@ -60,6 +66,7 @@ impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
         self.flush()
     }
 
+    /// Set the character justification
     pub fn justify(&mut self, just: Justification) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, 97u8, just as u8];
 
@@ -67,10 +74,12 @@ impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
         self.flush()
     }
 
+    /// Feed a single line
     pub fn feed(&mut self) -> Result<(), T::Error> {
         self.feed_n(1)
     }
 
+    /// Feed n lines
     pub fn feed_n(&mut self, n: u8) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, 'd' as u8, n];
 
@@ -78,12 +87,14 @@ impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
         self.flush()
     }
 
+    /// Set the underline mode
     pub fn set_underline(&mut self, n: u8) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, Command::DASH as u8, n];
         self.write_all(&cmd)?;
         self.flush()
     }
 
+    /// Enable bold printing
     pub fn set_bold(&mut self, flag: bool) -> Result<(), T::Error> {
         let cmd = [Command::ESC as u8, Command::EXCL as u8, flag as u8];
         self.write_all(&cmd)?;
