@@ -6,7 +6,7 @@ keywords = ["thermal-printer", "serial", "embedded-hal", "embedded-hal-driver"]
 categories = ["hardware-support", "no-std", "embedded"]
 license = "Apache-2.0"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
 exclude = [
   "ci/*",
