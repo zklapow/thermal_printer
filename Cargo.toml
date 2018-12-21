@@ -5,7 +5,7 @@ repository = "https://github.com/zklapow/thermal_printer"
 keywords = ["thermal-printer", "serial", "embedded-hal", "embedded-hal-driver"]
 categories = ["hardware-support", "no-std", "embedded"]
 license = "Apache-2.0"
-version = "0.0.3"
+version = "0.1.0"
 authors = ["Ze'ev Klapow <zklapow@gmail.com>"]
 exclude = [
   "ci/*",
