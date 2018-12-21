@@ -12,6 +12,7 @@ exclude = [
   "*.iml",
   ".travis.yml"
 ]
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "zklapow/thermal_printer" }
