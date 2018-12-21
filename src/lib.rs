@@ -1,8 +1,5 @@
 #![no_std]
 
-extern crate embedded_hal;
-extern crate nb;
-
 use embedded_hal::serial;
 use embedded_hal::blocking::serial::write::Default;
 use embedded_hal::prelude::*;
@@ -10,6 +7,7 @@ use nb::{Result};
 
 pub mod prelude {
     pub use super::{ThermalPrinter, Command, Justification};
+    pub use embedded_hal::serial::Write as _thermal_printer_serial_Write;
 }
 
 #[derive(Debug)]
