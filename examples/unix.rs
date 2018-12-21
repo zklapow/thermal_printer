@@ -29,6 +29,8 @@ fn main() {
 
     let mut printer = ThermalPrinter::new(tx_port);
 
+    printer.configure(11, 120, 40);
+
     println!("Feeding 3 lines");
     printer.feed_n(3).expect("Feed lines failed");
     println!("Running self test");

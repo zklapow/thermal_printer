@@ -32,11 +32,19 @@ pub enum Justification {
 #[derive(Clone)]
 pub struct ThermalPrinter<T> where T: serial::Write<u8> {
     port: T,
+
+    dot_print_time: u64,
+    dot_feed_time: u64,
 }
 
 impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
     pub fn new(port: T) -> ThermalPrinter<T> {
-        return ThermalPrinter { port }
+        // The default times here are copied from adafruit's thermal printer arduino library
+        return ThermalPrinter {
+            port,
+            dot_print_time: 30000u64,
+            dot_feed_time: 2100u64,
+        }
     }
 
     pub fn configure(&mut self, dots: u8, time: u8, interval: u8) -> Result<(), T::Error> {
@@ -66,9 +74,9 @@ impl <T> ThermalPrinter<T> where T: serial::Write<u8> {
     }
 
     pub fn feed_n(&mut self, n: u8) -> Result<(), T::Error> {
-        for _ in 0..n {
-            self.write_all(&[Command::LF as u8])?;
-        }
+        let cmd = [Command::ESC as u8, 'd' as u8, n];
+
+        self.write_all(&cmd)?;
         self.flush()
     }
 
